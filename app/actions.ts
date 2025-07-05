@@ -138,6 +138,14 @@ export async function createCheckoutSession(
   discountCode?: string
 ) {
   try {
+    // 验证必需的环境变量
+    if (!process.env.CREEM_API_URL) {
+      throw new Error("CREEM_API_URL environment variable is not set");
+    }
+    if (!process.env.CREEM_API_KEY) {
+      throw new Error("CREEM_API_KEY environment variable is not set");
+    }
+
     const requestBody: any = {
       product_id: productId,
       // request_id: `${userId}-${Date.now()}`, // use Unique request ID if you need
@@ -161,6 +169,14 @@ export async function createCheckoutSession(
       requestBody.discount_code = discountCode;
     }
 
+    console.log("Creating checkout session with:", {
+      url: process.env.CREEM_API_URL + "/checkouts",
+      productId,
+      productType,
+      credits_amount,
+      discountCode
+    });
+
     const response = await fetch(process.env.CREEM_API_URL + "/checkouts", {
       method: "POST",
       headers: {
@@ -171,10 +187,22 @@ export async function createCheckoutSession(
     });
 
     if (!response.ok) {
-      throw new Error("Failed to create checkout session");
+      // 获取详细的错误信息
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+        console.error("Creem API Error Response:", errorData);
+        console.error("Request body was:", requestBody);
+      } catch (jsonError) {
+        console.error("Failed to parse error response:", jsonError);
+      }
+      
+      throw new Error(`Failed to create checkout session: ${errorMessage}`);
     }
 
     const data = await response.json();
+    console.log("Checkout session created successfully:", data);
     return data.checkout_url;
   } catch (error) {
     console.error("Error creating checkout session:", error);
