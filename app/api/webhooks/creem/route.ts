@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { verifyCreemWebhookSignature } from "@/utils/creem/verify-signature";
 import { CreemWebhookEvent } from "@/types/creem";
 import {
   createOrUpdateCustomer,
@@ -11,16 +9,17 @@ import {
 const CREEM_WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET!;
 
 export async function POST(request: Request) {
-  // IMMEDIATE 200 RESPONSE - NO VALIDATION
-  console.log("🚨 IMMEDIATE 200 RESPONSE - DEBUGGING MODE");
+  console.log("🚨 WEBHOOK RECEIVED - SIMPLE VERSION");
   
-  // Return success immediately to prevent 401
-  const response = NextResponse.json({ received: true, timestamp: new Date().toISOString() });
+  // Immediate 200 response
+  setTimeout(() => processWebhookAsync(request), 0);
   
-  // Process in background (don't await)
-  processWebhookAsync(request);
-  
-  return response;
+  return new Response(JSON.stringify({ received: true, timestamp: new Date().toISOString() }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 }
 
 async function processWebhookAsync(request: Request) {
