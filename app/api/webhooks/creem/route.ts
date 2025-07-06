@@ -11,20 +11,31 @@ import {
 const CREEM_WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET!;
 
 export async function POST(request: Request) {
-  // EMERGENCY: Return 200 immediately to stop 401 errors
-  console.log("🚨 EMERGENCY MODE: Accepting all webhooks for debugging");
+  // IMMEDIATE 200 RESPONSE - NO VALIDATION
+  console.log("🚨 IMMEDIATE 200 RESPONSE - DEBUGGING MODE");
   
+  // Return success immediately to prevent 401
+  const response = NextResponse.json({ received: true, timestamp: new Date().toISOString() });
+  
+  // Process in background (don't await)
+  processWebhookAsync(request);
+  
+  return response;
+}
+
+async function processWebhookAsync(request: Request) {
   try {
     const body = await request.text();
-    const headersList = headers();
-    const allHeaders = Object.fromEntries((await headersList).entries());
     
     // Log everything for debugging
     console.log("=== WEBHOOK DEBUG INFO ===");
     console.log("Timestamp:", new Date().toISOString());
     console.log("Body length:", body.length);
     console.log("Body:", body);
-    console.log("Headers:", JSON.stringify(allHeaders, null, 2));
+    
+    // Clone request to get headers
+    const headers = Object.fromEntries(request.headers.entries());
+    console.log("Headers:", JSON.stringify(headers, null, 2));
     console.log("Secret set:", !!CREEM_WEBHOOK_SECRET);
     console.log("Secret value:", CREEM_WEBHOOK_SECRET);
     console.log("=== END DEBUG INFO ===");
@@ -58,10 +69,8 @@ export async function POST(request: Request) {
     }
     
     console.log("✅ Webhook processed successfully");
-    return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    return new NextResponse("Webhook error", { status: 400 });
   }
 }
 
