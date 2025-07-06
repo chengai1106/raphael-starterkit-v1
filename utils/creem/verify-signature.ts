@@ -6,22 +6,26 @@ export function verifyCreemWebhookSignature(
   secret: string
 ): boolean {
   try {
+    console.log("🔍 === SIGNATURE VERIFICATION START ===");
+    console.log("🔍 Raw inputs:", {
+      payloadLength: payload.length,
+      payloadPreview: payload.substring(0, 100) + "...",
+      receivedSignature: signature,
+      originalSecret: secret
+    });
+
     // Clean the secret - remove whsec_ prefix if present
     const cleanSecret = secret.startsWith("whsec_") ? secret.substring(6) : secret;
-    
-    // Log signature details for debugging
-    console.log("🔍 Signature verification details:", {
-      receivedSignature: signature,
-      originalSecret: secret,
+    console.log("🔍 Secret processing:", {
+      hadWhsecPrefix: secret.startsWith("whsec_"),
       cleanSecretLength: cleanSecret.length,
-      payloadLength: payload.length
+      cleanSecret: cleanSecret
     });
 
     // Create HMAC SHA256 hash with cleaned secret
     const hmac = createHmac("sha256", cleanSecret);
     const calculatedSignature = hmac.update(payload).digest("hex");
-    
-    console.log("🔍 Calculated signature:", calculatedSignature);
+    console.log("🔍 Calculated signature (hex):", calculatedSignature);
 
     // Handle different signature formats
     let cleanSignature = signature;
@@ -29,17 +33,24 @@ export function verifyCreemWebhookSignature(
     // Remove sha256= prefix if present
     if (signature.startsWith("sha256=")) {
       cleanSignature = signature.substring(7);
+      console.log("🔍 Removed sha256= prefix");
     }
     // Remove other possible prefixes
     else if (signature.startsWith("sha256:")) {
       cleanSignature = signature.substring(7);
+      console.log("🔍 Removed sha256: prefix");
     }
 
-    console.log("🔍 Clean signature:", cleanSignature);
+    console.log("🔍 Final comparison:", {
+      cleanSignature: cleanSignature,
+      calculatedSignature: calculatedSignature,
+      lengthMatch: cleanSignature.length === calculatedSignature.length
+    });
 
     // Compare signatures using timing-safe comparison
     const isValid = timingSafeEqual(cleanSignature, calculatedSignature);
     console.log("🔍 Signature valid:", isValid);
+    console.log("🔍 === SIGNATURE VERIFICATION END ===");
     
     return isValid;
   } catch (error) {
