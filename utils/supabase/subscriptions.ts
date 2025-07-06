@@ -105,15 +105,22 @@ export async function createOrUpdateSubscription(
 export async function getUserSubscription(userId: string) {
   const supabase = createServiceRoleClient();
 
+  // First get the customer for this user
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+
+  if (customerError || !customer) {
+    return null;
+  }
+
+  // Then get their active subscription
   const { data, error } = await supabase
     .from("subscriptions")
-    .select(
-      `
-      *,
-      customer:customers(user_id)
-    `
-    )
-    .eq("customer.user_id", userId)
+    .select("*")
+    .eq("customer_id", customer.id)
     .eq("status", "active")
     .single();
 

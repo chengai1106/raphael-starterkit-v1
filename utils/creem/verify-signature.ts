@@ -6,12 +6,42 @@ export function verifyCreemWebhookSignature(
   secret: string
 ): boolean {
   try {
-    // Create HMAC SHA256 hash
-    const hmac = createHmac("sha256", secret);
+    // Clean the secret - remove whsec_ prefix if present
+    const cleanSecret = secret.startsWith("whsec_") ? secret.substring(6) : secret;
+    
+    // Log signature details for debugging
+    console.log("🔍 Signature verification details:", {
+      receivedSignature: signature,
+      originalSecret: secret,
+      cleanSecretLength: cleanSecret.length,
+      payloadLength: payload.length
+    });
+
+    // Create HMAC SHA256 hash with cleaned secret
+    const hmac = createHmac("sha256", cleanSecret);
     const calculatedSignature = hmac.update(payload).digest("hex");
+    
+    console.log("🔍 Calculated signature:", calculatedSignature);
+
+    // Handle different signature formats
+    let cleanSignature = signature;
+    
+    // Remove sha256= prefix if present
+    if (signature.startsWith("sha256=")) {
+      cleanSignature = signature.substring(7);
+    }
+    // Remove other possible prefixes
+    else if (signature.startsWith("sha256:")) {
+      cleanSignature = signature.substring(7);
+    }
+
+    console.log("🔍 Clean signature:", cleanSignature);
 
     // Compare signatures using timing-safe comparison
-    return timingSafeEqual(signature, calculatedSignature);
+    const isValid = timingSafeEqual(cleanSignature, calculatedSignature);
+    console.log("🔍 Signature valid:", isValid);
+    
+    return isValid;
   } catch (error) {
     console.error("Error verifying webhook signature:", error);
     return false;
