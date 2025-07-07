@@ -33,12 +33,12 @@ export const SUBSCRIPTION_TIERS: ProductTier[] = [
       "API usage dashboard",
     ],
     featured: true,
-    discountCode: "WELCOME", // Optional discount code
+    discountCode: "", // Optional discount code
   },
   {
     name: "Enterprise",
     id: "tier-enterprise",
-    productId: "prod_3qPYksZMtk94wQsdkgajrJ", // $99 monthly subscription
+    productId: "prod_7O7QOBP8fWILKhusJdGJMg", // $99 monthly subscription
     priceMonthly: "$99",
     description: "For large organizations with advanced requirements.",
     features: [
@@ -58,7 +58,7 @@ export const CREDITS_TIERS: ProductTier[] = [
   {
     name: "Basic Package",
     id: "tier-3-credits",
-    productId: "prod_MqcjVo0Bpx0rbYmHVlrh2", // $9 one-time purchase
+    productId: "prod_5qbi8cQ4x8eUQLixzzkbYJ", // $9 one-time purchase
     priceMonthly: "$9",
     description: "3 credits for testing and small-scale projects.",
     creditAmount: 3,
@@ -74,7 +74,7 @@ export const CREDITS_TIERS: ProductTier[] = [
   {
     name: "Standard Package",
     id: "tier-6-credits",
-    productId: "prod_4ICkTovEC6o9QY6UuL3aI0", // $13 one-time purchase
+    productId: "prod_6dawKpYQy3EsVCRTE7fxqU", // $13 one-time purchase
     priceMonthly: "$13",
     description: "6 credits for medium-sized applications.",
     creditAmount: 6,
