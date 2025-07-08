@@ -4,6 +4,8 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { createClient } from "@/utils/supabase/server";
 import { Toaster } from "@/components/ui/toaster";
+import { StagewiseToolbar } from "@stagewise/toolbar-next";
+import ReactPlugin from "@stagewise-plugins/react";
 import "./globals.css";
 
 const baseUrl = process.env.BASE_URL
@@ -46,6 +48,11 @@ export default async function RootLayout({
             <Footer />
           </div>
           <Toaster />
+          <StagewiseToolbar 
+            config={{
+              plugins: [ReactPlugin],
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

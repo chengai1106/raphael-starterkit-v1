@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     `
     )
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   const subscription = customerData?.subscriptions?.[0];
   const credits = customerData?.credits || 0;

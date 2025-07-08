@@ -32,7 +32,7 @@ export function SubscriptionPortalDialog() {
           .from("customers")
           .select("creem_customer_id")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         setHasCustomer(!!customer?.creem_customer_id);
       } catch (err) {
