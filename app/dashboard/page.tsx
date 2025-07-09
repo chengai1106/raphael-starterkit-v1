@@ -15,8 +15,8 @@ export default async function DashboardPage() {
     return redirect("/sign-in");
   }
 
-  // Get customer data including credits and subscription
-  const { data: customerData } = await supabase
+  // Query all customers for this user to handle multiple subscriptions
+  const { data: allCustomers, error: customersError } = await supabase
     .from("customers")
     .select(
       `
@@ -24,7 +24,9 @@ export default async function DashboardPage() {
       subscriptions (
         status,
         current_period_end,
-        creem_product_id
+        creem_product_id,
+        current_period_start,
+        canceled_at
       ),
       credits_history (
         amount,
@@ -34,11 +36,51 @@ export default async function DashboardPage() {
     `
     )
     .eq("user_id", user.id)
-    .maybeSingle();
+    .order("updated_at", { ascending: false });
 
-  const subscription = customerData?.subscriptions?.[0];
-  const credits = customerData?.credits || 0;
-  const recentCreditsHistory = customerData?.credits_history?.slice(0, 2) || [];
+  if (customersError) {
+    console.error("❌ Error fetching customers:", customersError);
+  }
+
+  // Aggregate data: combine credits and find active subscription
+  let totalCredits = 0;
+  let allCreditsHistory: any[] = [];
+  let activeSubscription = null;
+
+  if (allCustomers && allCustomers.length > 0) {
+    // Calculate total credits
+    totalCredits = allCustomers.reduce((sum, customer) => sum + (customer.credits || 0), 0);
+    
+    // Merge credits history
+    allCustomers.forEach(customer => {
+      if (customer.credits_history) {
+        allCreditsHistory.push(...customer.credits_history);
+      }
+    });
+
+    // Find active subscription (priority: active > trialing > others)
+    const allSubscriptions = allCustomers.flatMap(customer => customer.subscriptions || []);
+
+    const sortedSubscriptions = allSubscriptions.sort((a, b) => {
+      const statusPriority = { 'active': 1, 'trialing': 2, 'canceled': 3, 'expired': 4 };
+      const aPriority = statusPriority[a.status as keyof typeof statusPriority] || 5;
+      const bPriority = statusPriority[b.status as keyof typeof statusPriority] || 5;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // If same status, choose the newest
+      return new Date(b.current_period_end || 0).getTime() - new Date(a.current_period_end || 0).getTime();
+    });
+
+    activeSubscription = sortedSubscriptions[0] || null;
+  }
+
+  // Sort credits history
+  const recentCreditsHistory = allCreditsHistory
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 2);
 
   return (
     <div className="flex-1 w-full flex flex-col gap-6 sm:gap-8 px-4 sm:px-8 container">
@@ -55,9 +97,9 @@ export default async function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <SubscriptionStatusCard subscription={subscription} />
+        <SubscriptionStatusCard subscription={activeSubscription} />
         <CreditsBalanceCard
-          credits={credits}
+          credits={totalCredits}
           recentHistory={recentCreditsHistory}
         />
         <QuickActionsCard />
